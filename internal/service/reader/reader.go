@@ -45,6 +45,24 @@ func checkFirstLine(in []string) error {
 	return nil
 }
 
+func checkSell(in []string) error {
+	for _, v := range in {
+		_, err := strconv.Atoi(v)
+		if err == nil {
+			continue
+		}
+		if len(in) < 2 {
+			return fmt.Errorf("[Reader.checkSell]: incorrect cell: \"%v\"", v)
+		}
+		if string(v[0]) != "=" {
+			return fmt.Errorf("[Reader.checkSell]: incorrect cell, should be \"=\", not \"%v\"", v)
+		} else if string(v[1]) != "A" && string(v[1]) != "B" && string(v[1]) != "C" {
+			return fmt.Errorf("[Reader.checkSell]: incorrect cell, should be \"A or B or Cell\", not \"%v\"", v)
+		}
+	}
+	return nil
+}
+
 func checkSize(in []string) error {
 	if len(in) != 4 {
 		return fmt.Errorf("[Reader.checkSize]: incorrect size row, should be 3, not %v", len(in))
@@ -52,11 +70,12 @@ func checkSize(in []string) error {
 	return nil
 }
 
-func (r *reader) ReadCsv() (map[int]entity.RowString, error) {
+func (r *reader) ReadCsv() (entity.Table, error) {
 	m := make(map[int]entity.RowString)
+	var rows []int
 	f, err := os.Open(r.filename)
 	if err != nil {
-		return nil, fmt.Errorf("[Reader.ReadCsv]:%v", err)
+		return entity.Table{}, fmt.Errorf("[Reader.ReadCsv]:%v", err)
 	}
 	defer f.Close()
 	csvReader := csv.NewReader(f)
@@ -67,23 +86,30 @@ func (r *reader) ReadCsv() (map[int]entity.RowString, error) {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("[Reader.ReadCsv]:%v", err)
+			return entity.Table{}, fmt.Errorf("[Reader.ReadCsv]:%v", err)
 		}
 		if checkSize(rec) != nil {
-			return nil, fmt.Errorf("[Reader.ReadCsv]: %v", len(rec))
+			return entity.Table{}, fmt.Errorf("[Reader.ReadCsv]: %v", len(rec))
 		}
 		if isFirstRow {
 			if err := checkFirstLine(rec); err != nil {
-				return nil, fmt.Errorf("[Reader.ReadCsv]:%v", err)
+				return entity.Table{}, fmt.Errorf("[Reader.ReadCsv]:%v", err)
 			}
 			isFirstRow = false
 			continue
 		}
+		if err := checkSell(rec); err != nil {
+			return entity.Table{}, fmt.Errorf("[Reader.ReadCsv]:%v", err)
+		}
 		key, row, err := getKeyAndValue(rec)
 		if err != nil {
-			return nil, fmt.Errorf("[Reader.ReadCsv]:%v", err)
+			return entity.Table{}, fmt.Errorf("[Reader.ReadCsv]:%v", err)
 		}
+		rows = append(rows, key)
 		m[key] = row
 	}
-	return m, nil
+	return entity.Table{
+		Data: m,
+		Row:  rows,
+	}, nil
 }
