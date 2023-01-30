@@ -14,22 +14,21 @@ func calculate(s string) (int, error) {
 		if !isNumber(ch) && ch != ' ' || i == len(s)-1 {
 			if operator == '+' {
 				stack = append(stack, curNumber)
-			}
-			if operator == '-' {
+			} else if operator == '-' {
 				stack = append(stack, -curNumber)
-			}
-			if operator == '*' {
+			} else if operator == '*' {
 				left := stack[len(stack)-1]
 				stack = stack[:len(stack)-1]
 				stack = append(stack, left*curNumber)
-			}
-			if operator == '/' {
+			} else if operator == '/' {
 				left := stack[len(stack)-1]
 				stack = stack[:len(stack)-1]
 				if curNumber == 0 {
 					return 0, fmt.Errorf("[Parcer.calculate]: division by zero")
 				}
 				stack = append(stack, left/curNumber)
+			} else {
+				return 0, fmt.Errorf("[Parcer.calculate]: incorrect operator")
 			}
 			operator = ch
 			curNumber = 0

@@ -51,7 +51,7 @@ func checkSell(in []string) error {
 		if err == nil {
 			continue
 		}
-		if len(in) < 2 {
+		if len(v) < 2 {
 			return fmt.Errorf("[Reader.checkSell]:incorrect cell: \"%v\"", v)
 		}
 		if string(v[0]) != "=" {
