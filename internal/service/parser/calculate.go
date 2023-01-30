@@ -1,6 +1,8 @@
 package parser
 
-func calculate(s string) int {
+import "fmt"
+
+func calculate(s string) (int, error) {
 	stack := []int{}
 	curNumber := 0
 	operator := '+'
@@ -24,6 +26,9 @@ func calculate(s string) int {
 			if operator == '/' {
 				left := stack[len(stack)-1]
 				stack = stack[:len(stack)-1]
+				if curNumber == 0 {
+					return 0, fmt.Errorf("[Parcer.calculate]: division by zero")
+				}
 				stack = append(stack, left/curNumber)
 			}
 			operator = ch
@@ -34,7 +39,7 @@ func calculate(s string) int {
 	for _, num := range stack {
 		result += num
 	}
-	return result
+	return result, nil
 }
 
 func isNumber(ch rune) bool { return '0' <= ch && ch <= '9' }

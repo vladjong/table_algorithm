@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"path"
 
 	"github.com/vladjong/test_yadro/internal/service/dfs"
 	"github.com/vladjong/test_yadro/internal/service/parser"
@@ -9,19 +12,22 @@ import (
 	"github.com/vladjong/test_yadro/internal/service/view"
 )
 
-const (
-	FILENAME = "test.csv"
-)
-
 func main() {
-	reader := reader.New(FILENAME)
+	filename, err := getFilename()
+	if err != nil {
+		log.Fatal(err)
+	}
+	reader := reader.New(filename)
 	table, err := reader.ReadCsv()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	dfs := dfs.New(table.Data)
-	path := dfs.GetPath()
+	path, err := dfs.GetPath()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	parser := parser.New(table.Data, path)
 	tableMap, err := parser.GetTable()
@@ -34,4 +40,16 @@ func main() {
 	view := view.New(table)
 
 	view.PrintTable()
+}
+
+func getFilename() (string, error) {
+	if len(os.Args) < 2 {
+		return "", fmt.Errorf("[getFilename]:empty filename")
+	}
+	filename := os.Args[1]
+	ext := path.Ext(filename)
+	if ext != ".csv" {
+		return "", fmt.Errorf("[getFilename]:incorrect extension file:%v, need:.csv", ext)
+	}
+	return filename, nil
 }

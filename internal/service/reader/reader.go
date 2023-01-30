@@ -34,13 +34,13 @@ func getKeyAndValue(in []string) (int, entity.RowString, error) {
 
 func checkFirstLine(in []string) error {
 	if in[0] != "" {
-		return fmt.Errorf("[Reader.checkFirstLine]: incorrect fist line, should be \"\", not \"%v\"", in[0])
+		return fmt.Errorf("[Reader.checkFirstLine]:incorrect fist line, should be \"\", not \"%v\"", in[0])
 	} else if in[1] != "A" {
-		return fmt.Errorf("[Reader.checkFirstLine]: incorrect fist line, should be \"A\", not \"%v\"", in[1])
+		return fmt.Errorf("[Reader.checkFirstLine]:incorrect fist line, should be \"A\", not \"%v\"", in[1])
 	} else if in[2] != "B" {
-		return fmt.Errorf("[Reader.checkFirstLine]: incorrect fist line, should be \"B\", not \"%v\"", in[2])
+		return fmt.Errorf("[Reader.checkFirstLine]:incorrect fist line, should be \"B\", not \"%v\"", in[2])
 	} else if in[3] != "Cell" {
-		return fmt.Errorf("[Reader.checkFirstLine]: incorrect fist line, should be \"Cell\", not \"%v\"", in[3])
+		return fmt.Errorf("[Reader.checkFirstLine]:incorrect fist line, should be \"Cell\", not \"%v\"", in[3])
 	}
 	return nil
 }
@@ -52,12 +52,15 @@ func checkSell(in []string) error {
 			continue
 		}
 		if len(in) < 2 {
-			return fmt.Errorf("[Reader.checkSell]: incorrect cell: \"%v\"", v)
+			return fmt.Errorf("[Reader.checkSell]:incorrect cell: \"%v\"", v)
 		}
 		if string(v[0]) != "=" {
-			return fmt.Errorf("[Reader.checkSell]: incorrect cell, should be \"=\", not \"%v\"", v)
+			return fmt.Errorf("[Reader.checkSell]:incorrect cell, should be \"=\", not \"%v\"", v)
 		} else if string(v[1]) != "A" && string(v[1]) != "B" && string(v[1]) != "C" {
-			return fmt.Errorf("[Reader.checkSell]: incorrect cell, should be \"A or B or Cell\", not \"%v\"", v)
+			if _, err := strconv.Atoi(string(v[1])); err == nil {
+				continue
+			}
+			return fmt.Errorf("[Reader.checkSell]:incorrect cell, should be \"A, B, Cell or number\", not \"%v\"", v)
 		}
 	}
 	return nil
@@ -65,7 +68,7 @@ func checkSell(in []string) error {
 
 func checkSize(in []string) error {
 	if len(in) != 4 {
-		return fmt.Errorf("[Reader.checkSize]: incorrect size row, should be 3, not %v", len(in))
+		return fmt.Errorf("[Reader.checkSize]:incorrect size row, should be 3, not %v", len(in))
 	}
 	return nil
 }
@@ -89,7 +92,7 @@ func (r *reader) ReadCsv() (entity.Table, error) {
 			return entity.Table{}, fmt.Errorf("[Reader.ReadCsv]:%v", err)
 		}
 		if checkSize(rec) != nil {
-			return entity.Table{}, fmt.Errorf("[Reader.ReadCsv]: %v", len(rec))
+			return entity.Table{}, fmt.Errorf("[Reader.ReadCsv]:%v", len(rec))
 		}
 		if isFirstRow {
 			if err := checkFirstLine(rec); err != nil {
