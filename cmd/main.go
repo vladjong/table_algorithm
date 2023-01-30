@@ -3,35 +3,17 @@ package main
 import (
 	"log"
 
-	"github.com/vladjong/test_yadro/internal/service/dfs"
-	"github.com/vladjong/test_yadro/internal/service/parser"
-	"github.com/vladjong/test_yadro/internal/service/reader"
-	"github.com/vladjong/test_yadro/internal/service/view"
-)
-
-const (
-	FILENAME = "test.csv"
+	"github.com/vladjong/test_yadro/internal/service/composite"
+	"github.com/vladjong/test_yadro/internal/service/flag"
 )
 
 func main() {
-	reader := reader.New(FILENAME)
-	table, err := reader.ReadCsv()
+	filename, err := flag.GetFilename()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	dfs := dfs.New(table.Data)
-	path := dfs.GetPath()
-
-	parser := parser.New(table.Data, path)
-	tableMap, err := parser.GetTable()
-	if err != nil {
+	if err := composite.GetTable(filename); err != nil {
 		log.Fatal(err)
 	}
-
-	table.Data = tableMap
-
-	view := view.New(table)
-
-	view.PrintTable()
 }

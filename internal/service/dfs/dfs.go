@@ -24,25 +24,31 @@ func New(data map[int]entity.RowString) *dfs {
 	}
 }
 
-func (d *dfs) GetPath() []string {
+func (d *dfs) GetPath() ([]string, error) {
 	for k, v := range d.colors {
 		if v == constant.WHITE {
-			d.dfs(k, d.colors, d.graph)
+			if err := d.dfs(k, d.colors, d.graph); err != nil {
+				return nil, fmt.Errorf("[DFS.GetPath]:%v", err)
+			}
 		}
 	}
 	reverseSlice(d.path)
-	return d.path
+	return d.path, nil
 }
 
-func (d *dfs) dfs(k string, colors map[string]int, graph map[string][]string) {
+func (d *dfs) dfs(k string, colors map[string]int, graph map[string][]string) error {
 	colors[k] = constant.GRAY
 	for _, v := range graph[k] {
 		if colors[v] == constant.WHITE {
 			d.dfs(v, colors, graph)
 		}
+		if colors[v] == constant.GRAY {
+			return fmt.Errorf("[DFS.dfs]:file has a cycle")
+		}
 	}
 	colors[k] = constant.BLACK
 	d.path = append(d.path, k)
+	return nil
 }
 
 func getColors(data map[int]entity.RowString) map[string]int {

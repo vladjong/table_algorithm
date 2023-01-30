@@ -23,6 +23,7 @@ func New(data map[int]entity.RowString, path []string) *parser {
 }
 
 func (p *parser) GetTable() (map[int]entity.RowString, error) {
+	p.fillCels()
 	out := make(map[int]entity.RowString, len(p.path))
 	for _, v := range p.path {
 		pattern, number, err := p.getRowAndColl(v)
@@ -30,14 +31,28 @@ func (p *parser) GetTable() (map[int]entity.RowString, error) {
 			return nil, fmt.Errorf("[Parser.GetTable]:%v", err)
 		}
 		if pattern == "A" {
-			num, _ := p.getCell(p.data[number].A)
+			num, err := p.getCell(p.data[number].A, v)
+			if err != nil {
+				return nil, fmt.Errorf("[Parser.GetTable]:%v", err)
+			}
 			p.cells[v] = num
 		} else if pattern == "B" {
-			num, _ := p.getCell(p.data[number].B)
+			num, err := p.getCell(p.data[number].B, v)
+			if err != nil {
+				return nil, fmt.Errorf("[Parser.GetTable]:%v", err)
+			}
 			p.cells[v] = num
 		} else if pattern == "C" {
-			num, _ := p.getCell(p.data[number].Cell)
+			num, err := p.getCell(p.data[number].Cell, v)
+			if err != nil {
+				return nil, fmt.Errorf("[Parser.GetTable]:%v", err)
+			}
 			p.cells[v] = num
+		} else if _, err := strconv.Atoi(pattern); err == nil {
+			if _, err := p.getCell(p.data[number].Cell, v); err != nil {
+				return nil, fmt.Errorf("[Parser.GetTable]:%v", err)
+			}
+
 		}
 	}
 	for k := range p.data {
@@ -51,7 +66,13 @@ func (p *parser) GetTable() (map[int]entity.RowString, error) {
 	return out, nil
 }
 
-func (p *parser) getCell(in string) (int, error) {
+func (p *parser) fillCels() {
+	for _, v := range p.path {
+		p.cells[v] = 0
+	}
+}
+
+func (p *parser) getCell(in, path string) (int, error) {
 	var slice []string
 	number, err := strconv.Atoi(in)
 	if err == nil {
@@ -65,24 +86,46 @@ func (p *parser) getCell(in string) (int, error) {
 			continue
 		} else if string(in[i]) == "+" || string(in[i]) == "-" || string(in[i]) == "*" || string(in[i]) == "/" {
 			slice = append(slice, string(in[i]))
-		} else if string(in[i]) == "A" || string(in[i]) == "B" || string(in[i]) == "C" {
+		} else if string(in[i]) == "A" || string(in[i]) == "B" || string(in[i]) == "C" || isNumber(rune(in[i])) {
 			j := i
 			for ; j < len(in); j++ {
 				if string(in[j]) == "+" || string(in[j]) == "-" || string(in[j]) == "*" || string(in[j]) == "/" {
-					slice = append(slice, fmt.Sprintf("%v", p.cells[string(in[i:j])]))
+					if path == string(in[i:j]) {
+						return 0, fmt.Errorf("[Parser.getCell]:incorrect cell:%v", string(in[i:j]))
+					}
+					if _, err := strconv.Atoi(string(in[i:j])); err != nil {
+						if _, ok := p.cells[string(in[i:j])]; !ok {
+							return 0, fmt.Errorf("[Parser.getCell]:incorrect cell:%v", string(in[i:j]))
+						}
+						slice = append(slice, fmt.Sprintf("%v", p.cells[string(in[i:j])]))
+					} else {
+						slice = append(slice, string(in[i:j]))
+					}
 					i = j - 1
 					break
 				} else if j == len(in)-1 {
-					slice = append(slice, fmt.Sprintf("%v", p.cells[string(in[i:j+1])]))
+					if path == string(in[i:j+1]) {
+						return 0, fmt.Errorf("[Parser.getCell]:incorrect cell:%v", string(in[i:j+1]))
+					}
+					if _, err := strconv.Atoi(string(in[i : j+1])); err != nil {
+						if _, ok := p.cells[string(in[i:j+1])]; !ok {
+							return 0, fmt.Errorf("[Parser.getCell]:incorrect cell:%v", string(in[i:j+1]))
+						}
+						slice = append(slice, fmt.Sprintf("%v", p.cells[string(in[i:j+1])]))
+					} else {
+						slice = append(slice, string(in[i:j+1]))
+					}
 					i = j
 					break
 				}
 			}
-		} else {
-			return 0, fmt.Errorf("[Parser.getCell]: invalid character: %v", string(in[i]))
 		}
 	}
-	return calculate(strings.Join(slice, "")), nil
+	answer, err := calculate(strings.Join(slice, ""))
+	if err != nil {
+		return 0, fmt.Errorf("[Parser.getCell]:%v", err)
+	}
+	return answer, nil
 }
 
 func (p *parser) getRowAndColl(in string) (string, int, error) {
@@ -101,8 +144,6 @@ func (p *parser) getRowAndColl(in string) (string, int, error) {
 			return "", 0, fmt.Errorf("[Parser.getRowAndColl]:%v", err)
 		}
 		number = val
-	} else {
-		return "", 0, fmt.Errorf("[Parser.getRowAndColl]: invalid character: %v", in)
 	}
 	return pattern, number, nil
 }
